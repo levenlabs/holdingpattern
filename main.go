@@ -3,10 +3,9 @@
 package main
 
 import (
-	"github.com/mediocregopher/skyapi/client"
 	"github.com/mediocregopher/lever"
+	"github.com/mediocregopher/skyapi/client"
 	"log"
-	"os"
 	"strings"
 	"time"
 )
@@ -49,7 +48,7 @@ func main() {
 	argsFound := 0
 	var argHost string
 	var argAddr string
-	for _, v := range os.Args[1:] {
+	for _, v := range l.ParamRest() {
 		if strings.HasPrefix(v, "-") {
 			continue
 		}
