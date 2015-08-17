@@ -3,11 +3,11 @@
 package main
 
 import (
-	"github.com/mediocregopher/lever"
-	"github.com/mediocregopher/skyapi/client"
 	"log"
 	"strings"
-	"time"
+
+	"github.com/mediocregopher/lever"
+	"github.com/mediocregopher/skyapi/client"
 )
 
 func main() {
@@ -20,7 +20,10 @@ func main() {
 	l.Add(lever.Param{
 		Name:        "--hostname",
 		Description: "Hostname to advertise",
-		Default:     "",
+	})
+	l.Add(lever.Param{
+		Name:        "--category",
+		Description: "Category to advertise under. If unset the skyapi instance's global default will be used",
 	})
 	l.Add(lever.Param{
 		Name:        "--addr",
@@ -41,6 +44,7 @@ func main() {
 
 	apiAddr, _ := l.ParamStr("--api")
 	hostname, _ := l.ParamStr("--hostname")
+	category, _ := l.ParamStr("--category")
 	addr, _ := l.ParamStr("--addr")
 	weight, _ := l.ParamInt("--weight")
 	priority, _ := l.ParamInt("--priority")
@@ -81,7 +85,19 @@ func main() {
 		}
 	}
 
-	log.Printf("Advertising [%s]: %s on %s with priority %d weight %d", apiAddr, hostname, addr, priority, weight)
+	hostcat := hostname
+	if category != "" {
+		hostcat = hostname + "." + category
+	}
+	log.Printf("Advertising [%s]: %s on %s with priority %d weight %d", apiAddr, hostcat, addr, priority, weight)
 
-	log.Fatal(client.Provide(apiAddr, hostname, addr, weight, priority, -1, 5*time.Second))
+	log.Fatal(client.ProvideOpts(client.Opts{
+		SkyAPIAddr:        apiAddr,
+		Service:           hostname,
+		ThisAddr:          addr,
+		Category:          category,
+		Priority:          priority,
+		Weight:            weight,
+		ReconnectAttempts: 3,
+	}))
 }

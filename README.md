@@ -6,7 +6,7 @@ based on the command-line options/arguments. Makes testing remote endpoints extr
 ## Usage
 
 ```
-holdingpattern [--api=127.0.0.1:8053] [--weight=100] [--priority=1] [hostname] [addr]
+holdingpattern [--api=127.0.0.1:8053] [--weight=100] [--priority=1] [--category=""] [hostname] [addr]
 ```
 `hostname` and `addr` can be expressed using flags as well with `--hostname` and `--addr` respectively
 
