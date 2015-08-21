@@ -3,9 +3,9 @@
 package main
 
 import (
-	"log"
 	"strings"
 
+	"github.com/levenlabs/go-llog"
 	"github.com/mediocregopher/lever"
 	"github.com/mediocregopher/skyapi/client"
 )
@@ -70,7 +70,7 @@ func main() {
 			hostname = argHost
 			argHost = "" //reset so addr doesn't pick it up
 		} else {
-			log.Fatal("No hostname sent")
+			llog.Fatal("no hostname sent")
 		}
 	}
 
@@ -81,7 +81,7 @@ func main() {
 		} else if argAddr != "" {
 			addr = argAddr
 		} else {
-			log.Fatal("No address sent")
+			llog.Fatal("no address sent")
 		}
 	}
 
@@ -89,9 +89,15 @@ func main() {
 	if category != "" {
 		hostcat = hostname + "." + category
 	}
-	log.Printf("Advertising [%s]: %s on %s with priority %d weight %d", apiAddr, hostcat, addr, priority, weight)
+	llog.Info("advertising", llog.KV{
+		"apiAddr":  apiAddr,
+		"host":     hostcat,
+		"thisAddr": addr,
+		"priority": priority,
+		"weight":   weight,
+	})
 
-	log.Fatal(client.ProvideOpts(client.Opts{
+	err := client.ProvideOpts(client.Opts{
 		SkyAPIAddr:        apiAddr,
 		Service:           hostname,
 		ThisAddr:          addr,
@@ -99,5 +105,6 @@ func main() {
 		Priority:          priority,
 		Weight:            weight,
 		ReconnectAttempts: 3,
-	}))
+	})
+	llog.Fatal("skyapi client failed", llog.KV{"err": err})
 }
