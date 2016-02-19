@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/levenlabs/go-llog"
+	"github.com/levenlabs/go-srvclient"
 	"github.com/mediocregopher/lever"
 	"github.com/mediocregopher/skyapi/client"
 )
@@ -89,6 +90,7 @@ func main() {
 	if category != "" {
 		hostcat = hostname + "." + category
 	}
+	apiAddr = srvclient.MaybeSRV(apiAddr)
 	llog.Info("advertising", llog.KV{
 		"apiAddr":  apiAddr,
 		"host":     hostcat,
