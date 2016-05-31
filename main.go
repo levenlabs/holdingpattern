@@ -42,7 +42,7 @@ func main() {
 	})
 	l.Add(lever.Param{
 		Name:        "--prefix",
-		Descipriont: "Prefix to pass to skyapi. This will be prefixed to the unique id that is actually stored by skyapi",
+		Description: "Prefix to pass to skyapi. This will be prefixed to the unique id that is actually stored by skyapi",
 	})
 	l.Parse()
 
