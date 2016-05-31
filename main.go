@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	l := lever.New("holderingpattern", nil)
+	l := lever.New("holdingpattern", nil)
 	l.Add(lever.Param{
 		Name:        "--api",
 		Description: "Address skyapi is listening on",
@@ -40,6 +40,10 @@ func main() {
 		Description: "Priority to advertise",
 		Default:     "1",
 	})
+	l.Add(lever.Param{
+		Name:        "--prefix",
+		Descipriont: "Prefix to pass to skyapi. This will be prefixed to the unique id that is actually stored by skyapi",
+	})
 	l.Parse()
 
 	apiAddr, _ := l.ParamStr("--api")
@@ -48,6 +52,7 @@ func main() {
 	addr, _ := l.ParamStr("--addr")
 	weight, _ := l.ParamInt("--weight")
 	priority, _ := l.ParamInt("--priority")
+	prefix, _ := l.ParamStr("--prefix")
 
 	argsFound := 0
 	var argHost string
@@ -95,6 +100,7 @@ func main() {
 		"thisAddr": addr,
 		"priority": priority,
 		"weight":   weight,
+		"prefix":   prefix,
 	})
 
 	err := client.ProvideOpts(client.Opts{
@@ -104,6 +110,7 @@ func main() {
 		Category:          category,
 		Priority:          priority,
 		Weight:            weight,
+		Prefix:            prefix,
 		ReconnectAttempts: 3,
 	})
 	llog.Fatal("skyapi client failed", llog.KV{"err": err})
