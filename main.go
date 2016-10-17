@@ -4,6 +4,7 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	"github.com/levenlabs/go-llog"
 	"github.com/mediocregopher/lever"
@@ -94,24 +95,30 @@ func main() {
 	if category != "" {
 		hostcat = hostname + "." + category
 	}
-	llog.Info("advertising", llog.KV{
+
+	kv := llog.KV{
 		"apiAddr":  apiAddr,
 		"host":     hostcat,
 		"thisAddr": addr,
 		"priority": priority,
 		"weight":   weight,
 		"prefix":   prefix,
-	})
-
-	err := client.ProvideOpts(client.Opts{
-		SkyAPIAddr:        apiAddr,
-		Service:           hostname,
-		ThisAddr:          addr,
-		Category:          category,
-		Priority:          priority,
-		Weight:            weight,
-		Prefix:            prefix,
-		ReconnectAttempts: 3,
-	})
-	llog.Fatal("skyapi client failed", llog.KV{"err": err})
+	}
+	for {
+		llog.Info("advertising", kv)
+		err := client.ProvideOpts(client.Opts{
+			SkyAPIAddr:        apiAddr,
+			Service:           hostname,
+			ThisAddr:          addr,
+			Category:          category,
+			Priority:          priority,
+			Weight:            weight,
+			Prefix:            prefix,
+			ReconnectAttempts: 0, // do not attempt to reconnect, we'll do that here
+		})
+		if err != nil {
+			llog.Warn("skyapi error", kv, llog.ErrKV(err))
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
