@@ -7,9 +7,44 @@ import (
 	"time"
 
 	"github.com/levenlabs/go-llog"
+	"github.com/levenlabs/go-srvclient"
 	"github.com/mediocregopher/lever"
 	"github.com/mediocregopher/skyapi/client"
+	"github.com/miekg/dns"
 )
+
+// prefixResolver implements the Resolver interface
+type prefixResolver struct {
+	prefix string
+	srv    *srvclient.SRVClient
+}
+
+func (r *prefixResolver) preprocess(m *dns.Msg) {
+	if r.prefix == "" {
+		return
+	}
+	for i := range m.Answer {
+		if ansSRV, ok := m.Answer[i].(*dns.SRV); ok {
+			tar := ansSRV.Target
+			if strings.HasPrefix(tar, r.prefix+"-") {
+				if ansSRV.Priority < 2 {
+					ansSRV.Priority = uint16(0)
+				} else {
+					ansSRV.Priority = ansSRV.Priority - 1
+				}
+			}
+		}
+	}
+}
+
+func (r *prefixResolver) Resolve(h string) (string, error) {
+	if r.srv == nil {
+		r.srv = new(srvclient.SRVClient)
+		r.srv.EnableCacheLast()
+		r.srv.Preprocess = r.preprocess
+	}
+	return r.srv.SRV(h)
+}
 
 func main() {
 	l := lever.New("holdingpattern", nil)
@@ -44,6 +79,11 @@ func main() {
 	l.Add(lever.Param{
 		Name:        "--prefix",
 		Description: "Prefix to pass to skyapi. This will be prefixed to the unique id that is actually stored by skyapi",
+	})
+	l.Add(lever.Param{
+		Name:        "--prefer-prefixed-skyapi",
+		Description: "Prefer skyapi hostnames with the same --prefix",
+		Flag:        true,
 	})
 	l.Parse()
 
@@ -96,6 +136,23 @@ func main() {
 		hostcat = hostname + "." + category
 	}
 
+	opts := client.Opts{
+		SkyAPIAddr:        apiAddr,
+		Service:           hostname,
+		ThisAddr:          addr,
+		Category:          category,
+		Priority:          priority,
+		Weight:            weight,
+		Prefix:            prefix,
+		ReconnectAttempts: 0, // do not attempt to reconnect, we'll do that here
+	}
+
+	if l.ParamFlag("--prefer-prefixed-skyapi") {
+		opts.Resolver = &prefixResolver{
+			prefix: prefix,
+		}
+	}
+
 	kv := llog.KV{
 		"apiAddr":  apiAddr,
 		"host":     hostcat,
@@ -106,16 +163,7 @@ func main() {
 	}
 	for {
 		llog.Info("advertising", kv)
-		err := client.ProvideOpts(client.Opts{
-			SkyAPIAddr:        apiAddr,
-			Service:           hostname,
-			ThisAddr:          addr,
-			Category:          category,
-			Priority:          priority,
-			Weight:            weight,
-			Prefix:            prefix,
-			ReconnectAttempts: 0, // do not attempt to reconnect, we'll do that here
-		})
+		err := client.ProvideOpts(opts)
 		if err != nil {
 			llog.Warn("skyapi error", kv, llog.ErrKV(err))
 		}
